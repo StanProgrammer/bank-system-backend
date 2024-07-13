@@ -1,6 +1,7 @@
-# Room Booking App
-This is a backend code for Room Booking App.
-It handles Login,logout, bookRooms and getRooms
+# Bank System App
+This is a backend code for Bank System App.
+It handles Login,logout,pay loan emi, pay lump sum and Upload profile picture.
+It also gives user to write to Customer Care.
 
 # Backend endpoint url:
 - POST /login: Logs a user into the system.
@@ -9,8 +10,7 @@ It handles Login,logout, bookRooms and getRooms
 - GET /rooms: Retrieves a list of available rooms.
 
 # Frontend Git Url:
-https://github.com/StanProgrammer/room-booking-frontend
+
 
 
 # Live Url:
-https://room-booking-frontend-ion3.onrender.com
