@@ -1,99 +1,60 @@
 const Customer = require('../models/Customer');
-const Contact = require('../models/Contact')
+const Contact = require('../models/Contact');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const { AppError, asyncHandler } = require('../middleware/errorHandler');
 
-exports.register = async (req, res) => {
-    const { name, email, password,phone } = req.body; 
-    try {
-        let customer = await Customer.findOne({ email });
-        if (customer) {
-            return res.status(409).json({ msg: "Customer already exists" }); 
-        }
-        customer = new Customer({ name, email, password,phone }); 
-        const salt = await bcrypt.genSalt(10);
-        customer.password = await bcrypt.hash(password, salt);
-        customer.isActive = new Date();
-        await customer.save();
-        const payload = { user: { id: customer._id, isAdmin: customer.isAdmin } }; 
-        jwt.sign(payload, process.env.JWT_SECRET, (err, token) => {
-            if (err) {
-                console.log(err);
-                throw err;
-            }
-            console.log(token);
-            res.json({ token });
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).send('Server error');
-    }
-};
+const signToken = (customer) =>
+  new Promise((resolve, reject) => {
+    const payload = { user: { id: customer._id, isAdmin: customer.isAdmin } };
+    jwt.sign(payload, process.env.JWT_SECRET, (err, token) => (err ? reject(err) : resolve(token)));
+  });
 
+exports.register = asyncHandler(async (req, res) => {
+  const { name, email, password, phone } = req.body;
 
+  const existing = await Customer.findOne({ email });
+  if (existing) throw new AppError('Customer already exists', 409);
 
-exports.login = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        let customer = await Customer.findOne({ email });
-        if (!customer) {
-            return res.status(404).json({ msg: "Customer does not exist" }); 
-        }
-        const isMatch = await bcrypt.compare(password, customer.password);
-        if (!isMatch) {
-            return res.status(400).json({ msg: "Invalid password" }); 
-        }
-        const payload = { user: { id: customer._id, isAdmin: customer.isAdmin } }; 
-        jwt.sign(payload, process.env.JWT_SECRET,  (err, token) => {
-            if (err) throw err;
-            res.json({ token });
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).send('Server error');
-    }
-};
+  const customer = new Customer({ name, email, password, phone });
+  customer.password = await bcrypt.hash(password, await bcrypt.genSalt(10));
+  customer.isActive = new Date();
+  await customer.save();
 
-exports.customer = async (req, res) => {
-    try {
-        const cId = req.user.user.id; 
-        console.log(cId);
-        
-        
-        let customer = await Customer.findById(cId);
-        
-        if (!customer) {
-            return res.status(404).json({ msg: "Customer does not exist" });
-        }
+  const token = await signToken(customer);
+  res.json({ token });
+});
 
-        // If customer found, return customer details
-        res.json(customer);
-       
-    } catch (error) {
-        console.log(error);
-        res.status(500).send('Server error');
-    }
-};
+exports.login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-exports.contact = async (req, res) => {
-    const { name, email, subject,message } = req.body; 
-    try {
-        const cId = req.user.user.id;
-        let customer = await Customer.findOne({ email });
-        
-        if (!customer) {
-            return res.status(409).json({ msg: "Customer does not exists" }); 
-        }
-        let contactUs  = new Contact({ name, email, subject,message,cId }); 
-        
-        await contactUs.save();
-        res.status(200).json({
-            success: true,
-            message: "Alright, we will get back to you as soon as possible"
-          });
-    } catch (error) {
-        console.log(error);
-        res.status(500).send('Server error');
-    }
-};
+  const customer = await Customer.findOne({ email });
+  if (!customer) throw new AppError('Customer does not exist', 404);
+
+  const isMatch = await bcrypt.compare(password, customer.password);
+  if (!isMatch) throw new AppError('Invalid password', 400);
+
+  const token = await signToken(customer);
+  res.json({ token });
+});
+
+exports.customer = asyncHandler(async (req, res) => {
+  const customer = await Customer.findById(req.user.user.id);
+  if (!customer) throw new AppError('Customer does not exist', 404);
+  res.json(customer);
+});
+
+exports.contact = asyncHandler(async (req, res) => {
+  const { name, email, subject, message } = req.body;
+
+  const customer = await Customer.findOne({ email });
+  if (!customer) throw new AppError('Customer does not exist', 409);
+
+  const contactUs = new Contact({ name, email, subject, message, cId: req.user.user.id });
+  await contactUs.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Alright, we will get back to you as soon as possible',
+  });
+});

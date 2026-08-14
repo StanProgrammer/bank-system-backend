@@ -1,21 +1,35 @@
 def minimize_loss(prices):
-    min_loss = float('inf')
+    """
+    Minimum Loss problem (HackerRank classic), O(n log n).
 
-    buy_year = -1
-    sell_year = -1
-    for sell_index in range(1, len(prices)):
-        for buy_index in range(sell_index):
-            if prices[buy_index] > prices[sell_index]:
-                current_loss = prices[buy_index] - prices[sell_index]
-                if current_loss < min_loss:
-                    min_loss = current_loss
-                    buy_year = buy_index + 1
-                    sell_year = sell_index + 1
-    if buy_year == -1 or sell_year == -1:
+    Find the pair (buy before sell, buy price > sell price) with the smallest
+    positive loss. Sort (price, index) pairs by price: the minimal positive
+    loss always shows up between two *adjacent* entries in sorted order, so a
+    single scan after sorting is enough (no O(n^2) nested loop).
+    """
+    if not prices or len(prices) < 2:
         return -1
 
-    return f"Buy in year {buy_year} and sell in year {sell_year} with a loss of {min_loss}"
+    pairs = sorted((price, i) for i, price in enumerate(prices))
 
-# Example usage
-prices = [20, 15, 7, 2, 20]
-print(minimize_loss(prices))
+    best = None  # (loss, buy_index, sell_index)
+    for i in range(1, len(pairs)):
+        prev_price, prev_index = pairs[i - 1]
+        price, index = pairs[i]
+
+        # Buy the pricier entry earlier, sell the cheaper one later.
+        if index < prev_index:
+            loss = price - prev_price  # always > 0 here
+            if best is None or loss < best[0]:
+                best = (loss, index, prev_index)
+
+    if best is None:
+        return -1
+
+    loss, buy_year, sell_year = best
+    return f"Buy in year {buy_year + 1} and sell in year {sell_year + 1} with a loss of {loss}"
+
+
+if __name__ == "__main__":
+    prices = [20, 15, 7, 2, 20]
+    print(minimize_loss(prices))

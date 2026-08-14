@@ -13,7 +13,8 @@ const PaymentSchema = new mongoose.Schema({
 
 const LoanSchema = new mongoose.Schema({
   customer_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customer',
     required: true
   },
   loan_name: {

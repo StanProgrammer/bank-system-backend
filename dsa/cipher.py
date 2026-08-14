@@ -1,47 +1,31 @@
-# Encryption
-def encrypt(text,s):
-    result = ""
+def _shift(char, s):
+    """Shift a single alphabetic character by s; non-alpha chars pass through."""
+    if char.isupper():
+        return chr((ord(char) + s - 65) % 26 + 65)
+    if char.islower():
+        return chr((ord(char) + s - 97) % 26 + 97)
+    return char
 
-    
-    for i in range(len(text)):
-        char = text[i]
 
-        # Encrypt uppercase characters
-        if (char.isupper()):
-            result += chr((ord(char) + s-65) % 26 + 65)
-
-        # Encrypt lowercase characters
-        else:
-            result += chr((ord(char) + s - 97) % 26 + 97)
-
-    return result
-
-#check the above function
-text = "ATTACKATONCE"
-s = 4
-print ("Text  : " + text)
-print ("Shift : " + str(s))
-print ("Cipher: " + encrypt(text,s))
+def encrypt(text, s):
+    """Caesar cipher: shift each letter forward by s. Non-letters unchanged."""
+    return "".join(_shift(ch, s) for ch in text)
 
 
 def decrypt(ciphertext, s):
-    result = ""
-    
-    for i in range(len(ciphertext)):
-        char = ciphertext[i]
+    """Reverse of encrypt: shift each letter back by s."""
+    return "".join(_shift(ch, -s) for ch in ciphertext)
 
-        # Decrypt uppercase characters
-        if char.isupper():
-            result += chr((ord(char) - s - 65) % 26 + 65)
-        
-        # Decrypt lowercase characters
-        else:
-            result += chr((ord(char) - s - 97) % 26 + 97)
 
-    return result
+if __name__ == "__main__":
+    text = "ATTACKATONCE"
+    s = 4
+    print("Text  : " + text)
+    print("Shift : " + str(s))
+    print("Cipher: " + encrypt(text, s))
 
-ciphertext = "EXXEGOEXSRGI"
-s = 4
-print ("Cipher   : " + ciphertext)
-print ("Shift    : " + str(s))
-print ("Decrypted: " + decrypt(ciphertext, s))
+    ciphertext = "EXXEGOEXSRGI"
+    s = 4
+    print("Cipher   : " + ciphertext)
+    print("Shift    : " + str(s))
+    print("Decrypted: " + decrypt(ciphertext, s))
